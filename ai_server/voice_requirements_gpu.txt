@@ -1,0 +1,16 @@
+# For voice_server.py on the graphics card (--device cuda). Install into its own environment
+# (README, Part E), in this order, so nothing changes for the speech server. Set up and tested
+# on the campus PC on 31 Oct 2026 (RTX 2070, driver 566.03 = CUDA 12.7 at most).
+#
+#   python -m venv C:\apnvi\voice_env_gpu
+#   C:\apnvi\voice_env_gpu\Scripts\python.exe -m pip install -r voice_requirements_gpu.txt
+#   C:\apnvi\voice_env_gpu\Scripts\python.exe -m pip uninstall -y onnxruntime onnxruntime-gpu
+#   C:\apnvi\voice_env_gpu\Scripts\python.exe -m pip install --no-deps onnxruntime-gpu==1.23.2
+#
+# The uninstall/reinstall is needed because kokoro-onnx pulls in the processor-only onnxruntime,
+# which shares a folder with onnxruntime-gpu. onnxruntime-gpu 1.23.2, not newer: newer ones need
+# CUDA 13, which this driver does not have. cuBLAS and cuDNN come from C:\apnvi\cuda_libs (Part C).
+kokoro-onnx==0.6.1
+onnxruntime-gpu==1.23.2
+nvidia-cuda-runtime-cu12==12.9.79
+nvidia-cufft-cu12==11.4.1.4

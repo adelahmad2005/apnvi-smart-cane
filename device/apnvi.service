@@ -1,0 +1,30 @@
+# Start the whole device by itself when the Jetson has started (optional, 16 Nov).
+#
+# Install (once, on the Jetson, with sudo):
+#   sudo cp apnvi.service /etc/systemd/system/apnvi.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable apnvi.service        (start it at every boot)
+#   sudo systemctl start apnvi.service         (start it now)
+# Stop it:   sudo systemctl stop apnvi.service      Switch it off: sudo systemctl disable apnvi.service
+# Its output: journalctl -u apnvi.service -f   and /tmp/apnvi_session.log
+#
+# It runs start.sh as the user apnvi, with the settings in ~/apnvi_device.conf (the campus PC's
+# address, the map, the voice). It waits 20 s so the camera, the LiDAR and the Wi-Fi are up.
+# While it is installed, do not also run start.sh by hand: stop the service first.
+
+[Unit]
+Description=APNVI device (Stages 1 to 4)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=forking
+User=apnvi
+ExecStartPre=/bin/sleep 20
+ExecStart=/bin/bash /home/apnvi/apnvi_demo/src/apnvi-smart-cane/device/start.sh 0.3
+ExecStop=/bin/bash /home/apnvi/apnvi_demo/src/apnvi-smart-cane/device/stop.sh
+RemainAfterExit=yes
+TimeoutStartSec=120
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,19 @@
+# Remote link: the Jetson's ssh over a Cloudflare tunnel, its address told to the
+# PC's front door. Install (admin):
+#   cp remote_link.sh ~/apnvi_tools/ ; chmod +x ~/apnvi_tools/remote_link.sh
+#   sudo cp apnvi-remote-link.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now apnvi-remote-link.service
+# Log: journalctl -u apnvi-remote-link -f
+[Unit]
+Description=APNVI remote link: ssh over a Cloudflare tunnel, address told to the PC
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=apnvi
+ExecStart=/bin/bash /home/apnvi/apnvi_tools/remote_link.sh
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

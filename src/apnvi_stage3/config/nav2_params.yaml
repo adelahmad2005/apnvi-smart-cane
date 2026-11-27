@@ -1,0 +1,73 @@
+# Nav2 for Stage 3: it only PLANS a route (Adel, 29 Oct). No controller, no behaviour tree,
+# nothing drives. The planner and its map of obstacles (the "costmap") are all that runs.
+# Run lean: the obstacle map updates once a second, like the RTAB-Map map.
+
+planner_server:
+  ros__parameters:
+    expected_planner_frequency: 1.0     # a new route about once a second
+    planner_plugins: ["GridBased"]
+    GridBased:
+      plugin: "nav2_navfn_planner/NavfnPlanner"   # finds the shortest route over the grid
+      tolerance: 0.5                    # a goal within 0.5 m of a free spot is fine
+      use_astar: true                   # A*: looks toward the goal, less work than the default
+      allow_unknown: false              # do not plan through places not seen yet
+
+lifecycle_manager_planner:
+  ros__parameters:
+    autostart: true                     # start (configure and activate) the planner by itself
+    node_names: ["planner_server"]
+
+global_costmap:
+  global_costmap:
+    ros__parameters:
+      update_frequency: 1.0             # obstacle map refreshed once a second
+      publish_frequency: 1.0
+      global_frame: map
+      robot_base_frame: base_link
+      robot_radius: 0.25                # how wide the device is, in metres (provisional)
+      resolution: 0.05
+      track_unknown_space: true
+      always_send_full_costmap: true
+      plugins: ["static_layer", "obstacle_layer", "camera_layer", "inflation_layer"]
+      static_layer:                     # the RTAB-Map map: walls and floor
+        plugin: "nav2_costmap_2d::StaticLayer"
+        map_subscribe_transient_local: true
+      obstacle_layer:                   # what the LiDAR sees right now (a person stepping in)
+        plugin: "nav2_costmap_2d::ObstacleLayer"
+        enabled: true
+        observation_sources: scan
+        scan:
+          topic: /scan
+          data_type: "LaserScan"
+          marking: true
+          clearing: true
+          max_obstacle_height: 2.0
+          obstacle_min_range: 0.3       # ignore the device's own body (the user: scan_filter)
+          raytrace_min_range: 0.3
+          obstacle_max_range: 6.0
+          raytrace_max_range: 8.0
+      camera_layer:                     # what the camera sees low down: boxes, bags.
+        # Its own layer, so the LiDAR (77 cm, above a low box) never clears the camera's marks.
+        plugin: "nav2_costmap_2d::ObstacleLayer"
+        enabled: true
+        observation_sources: camera
+        camera:
+          topic: /camera/obstacle_scan
+          data_type: "LaserScan"
+          marking: true
+          clearing: true
+          inf_is_valid: true            # "nothing there" clears the space
+          max_obstacle_height: 2.0
+          obstacle_min_range: 0.1
+          raytrace_min_range: 1.3       # 15 Nov: closer than this the camera cannot see low things
+          # (86 cm up, looking level): never clear there, so a box seen earlier stays marked
+          obstacle_max_range: 3.5
+          raytrace_max_range: 4.0
+      inflation_layer:                  # keep the route away from walls
+        plugin: "nav2_costmap_2d::InflationLayer"
+        # 23 Nov (Adel): the route passed desk corners about 0.4 m from the axle; the pole and
+        # camera 0.7 m behind it swung into the corner on the turn and the device was caught.
+        # A wider, gentler cost keeps routes 0.7 to 1 m from corners where there is room and in
+        # the middle of narrow gaps (it forbids nothing). Was 3.0 and 0.55.
+        cost_scaling_factor: 1.5
+        inflation_radius: 1.0

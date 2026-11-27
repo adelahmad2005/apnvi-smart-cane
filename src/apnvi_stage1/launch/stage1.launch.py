@@ -1,0 +1,81 @@
+"""
+Start the whole Stage 1 system with one command.
+
+On the Jetson (real camera + real ESP32):
+  ros2 launch apnvi_stage1 stage1.launch.py
+On a laptop with no hardware (play a clip in another window with tools/play_clip.py):
+  ros2 launch apnvi_stage1 stage1.launch.py camera:=false test_mode:=true
+Options:
+  camera:=false        do not start the RealSense driver
+  test_mode:=true      made-up ultrasonic distances, no ESP32 needed
+  port:=/dev/ttyACM0   the ESP32's USB port (default /dev/ttyUSB0)
+  rviz:=true           also open rviz2 showing the depth picture
+  view:=false          do not start the browser live view (on by default, port 8080)
+  voice:=true          switch the voice on (off by default)
+  beeps:=true          switch the beeps back on (off by default since 26 Oct)
+  camera_height:=0.86  the camera lens height above the floor in metres (on the device, 13 Nov)
+  camera_tilt:=0.0     how far the camera is tipped down, in degrees (16 Nov). Read it with
+                       device/floor_check.py on an empty floor
+Live view: open http://localhost:8080, or http://<Jetson IP>:8080 from a laptop on the same wifi
+"""
+
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.conditions import IfCondition
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch_ros.actions import Node
+from launch_ros.substitutions import FindPackageShare
+
+
+def generate_launch_description():
+    camera = LaunchConfiguration('camera')
+    test_mode = LaunchConfiguration('test_mode')
+    port = LaunchConfiguration('port')
+    depth_topic = LaunchConfiguration('depth_topic')
+    rviz = LaunchConfiguration('rviz')
+    view = LaunchConfiguration('view')
+    voice = LaunchConfiguration('voice')
+    beeps = LaunchConfiguration('beeps')
+    camera_height = LaunchConfiguration('camera_height')
+    align_depth = LaunchConfiguration('align_depth')
+    camera_tilt = LaunchConfiguration('camera_tilt')
+
+    return LaunchDescription([
+        DeclareLaunchArgument('camera', default_value='true'),
+        DeclareLaunchArgument('test_mode', default_value='false'),
+        DeclareLaunchArgument('port', default_value='/dev/ttyUSB0'),
+        DeclareLaunchArgument('depth_topic',
+                              default_value='/camera/camera/depth/image_rect_raw'),
+        DeclareLaunchArgument('rviz', default_value='false'),
+        DeclareLaunchArgument('view', default_value='true'),
+        DeclareLaunchArgument('voice', default_value='false'),
+        DeclareLaunchArgument('beeps', default_value='false'),   # Adel, 26 Oct: no beeps
+        DeclareLaunchArgument('camera_height', default_value='0.86'),   # on the device, 13 Nov
+        DeclareLaunchArgument('align_depth', default_value='false'),   # Stage 3's map sets it
+        DeclareLaunchArgument('camera_tilt', default_value='0.0'),   # tipped down, degrees
+
+        # The RealSense camera driver (only on the device, where it is installed).
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(PathJoinSubstitution(
+                [FindPackageShare('realsense2_camera'), 'launch', 'rs_launch.py'])),
+            launch_arguments={'align_depth.enable': align_depth}.items(),
+            condition=IfCondition(camera)),
+
+        Node(package='apnvi_stage1', executable='esp32_reader', output='screen',
+             parameters=[{'port': port, 'test_mode': test_mode}]),
+        Node(package='apnvi_stage1', executable='hazard_node', output='screen',
+             parameters=[{'depth_topic': depth_topic, 'camera_height_m': camera_height,
+                          'camera_tilt_deg': camera_tilt}]),
+        Node(package='apnvi_stage1', executable='output_node', output='screen',
+             parameters=[{'voice': voice, 'beeps': beeps}]),
+        Node(package='apnvi_stage1', executable='live_view', output='screen',
+             parameters=[{'depth_topic': depth_topic, 'camera_height_m': camera_height,
+                          'camera_tilt_deg': camera_tilt}],
+             condition=IfCondition(view)),
+
+        Node(package='rviz2', executable='rviz2', output='log',
+             arguments=['-d', PathJoinSubstitution(
+                 [FindPackageShare('apnvi_stage1'), 'rviz', 'stage1.rviz'])],
+             condition=IfCondition(rviz)),
+    ])

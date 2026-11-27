@@ -1,0 +1,4 @@
+# For voice_server.py only. Install into its own environment (README, Part E), so nothing
+# changes for the speech server. Tried on 31 Oct 2026 with these versions.
+kokoro-onnx==0.6.1
+onnxruntime==1.31.1

@@ -1,0 +1,28 @@
+# The console helper, always on from boot. It does NOT start the device; the
+# PC's "Get ready" button does that through it.
+#
+# Install (once, on the Jetson, with sudo):
+#   sudo cp apnvi-console.service /etc/systemd/system/apnvi-console.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now apnvi-console.service
+# Its output: journalctl -u apnvi-console.service -f
+#
+# KillMode=process: restarting or stopping this service must not stop the device that it
+# started (start.sh's programs are its children). Without it, systemd would kill them too.
+# Do not install it together with apnvi.service (two things would start the device).
+
+[Unit]
+Description=APNVI console helper (port 8082, local only)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=apnvi
+ExecStart=/bin/bash /home/apnvi/apnvi_demo/src/apnvi-smart-cane/console/jetson/run_helper.sh
+Restart=on-failure
+RestartSec=5
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target

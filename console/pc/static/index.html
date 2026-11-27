@@ -1,0 +1,621 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>APNVI console</title>
+<!-- Served by hub.py on the campus PC. Features stay on voice; this page
+     gets the device ready, maps a room, shows what the device is doing, and fixes problems. -->
+<style>
+:root{--bg:#f4f3ef;--card:#fff;--line:#dedcd4;--text:#1f1e1c;--muted:#6b6a65;--faint:#9a988f;
+--ok:#2e7d32;--okbg:#e6f2e3;--warn:#8a5a00;--warnbg:#fbf0d9;--bad:#b3261e;--badbg:#fbe7e5;
+--accent:#1d5fa8;--accentbg:#e5eef9;--stop:#c62828}
+@media (prefers-color-scheme:dark){:root{--bg:#1b1b1a;--card:#262625;--line:#3a3a38;--text:#ecebe6;
+--muted:#a8a69f;--faint:#7b7a74;--ok:#8fcf8f;--okbg:#1f3320;--warn:#f0c46a;--warnbg:#3a2f15;
+--bad:#f2948c;--badbg:#3f1f1c;--accent:#8cb8ec;--accentbg:#1c2d42;--stop:#e53935}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,"Segoe UI",sans-serif}
+header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);
+padding:8px 14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+h1{font-size:17px;font-weight:600;margin:0 8px 0 0}
+h2{font-size:15px;font-weight:600;margin:0 0 8px;display:flex;align-items:center;gap:8px}
+main{padding:12px 14px;display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(360px,1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.wide{grid-column:1/-1}
+.pill{padding:2px 9px;border-radius:999px;font-size:12px;background:var(--line);color:var(--muted);white-space:nowrap}
+.pill.ok{background:var(--okbg);color:var(--ok)}.pill.warn{background:var(--warnbg);color:var(--warn)}
+.pill.bad{background:var(--badbg);color:var(--bad)}
+button{font:inherit;font-size:13px;padding:5px 11px;border-radius:8px;border:1px solid var(--line);
+background:var(--card);color:var(--text);cursor:pointer}
+button:hover{border-color:var(--muted)}button:disabled{opacity:.45;cursor:default}
+button.main{background:var(--accent);color:#fff;border-color:var(--accent)}
+button.danger{border-color:var(--bad);color:var(--bad)}
+#stop{background:var(--stop);color:#fff;border:none;font-weight:700;padding:8px 22px;font-size:15px}
+select,input{font:inherit;font-size:13px;padding:4px 6px;border-radius:8px;border:1px solid var(--line);
+background:var(--card);color:var(--text)}
+.row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:6px 0}
+.steps{list-style:none;margin:8px 0 0;padding:0}
+.steps li{display:flex;gap:8px;align-items:center;padding:5px 0;border-top:1px solid var(--line)}
+.steps li:first-child{border-top:none}
+.ic{width:18px;text-align:center;font-weight:700}
+.s-ok .ic{color:var(--ok)}.s-warn .ic{color:var(--warn)}.s-fail .ic{color:var(--bad)}
+.s-running .ic{color:var(--accent)}.s-waiting{color:var(--faint)}
+.grow{flex:1;min-width:0}.detail{color:var(--muted);font-size:12px}
+.mono{font-family:Consolas,ui-monospace,monospace;font-size:12px}
+.box{background:var(--bg);border-radius:8px;padding:6px 8px;max-height:180px;overflow:auto;white-space:pre-wrap}
+.bar{height:10px;background:var(--line);border-radius:6px;overflow:hidden}
+.bar div{height:100%;background:var(--ok);width:0;transition:width .4s}
+table{width:100%;border-collapse:collapse;font-size:13px}td{padding:3px 4px;border-top:1px solid var(--line)}
+.sub{margin:12px 0 2px;font-weight:600;font-size:13px;color:var(--muted)}
+.num{display:inline-block;width:20px;color:var(--accent);font-weight:700}
+.note{color:var(--muted);font-size:12px;margin:4px 0}
+.light{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--line);margin-right:4px;vertical-align:-1px}
+.light.on{background:var(--ok)}.light.red{background:var(--bad)}.light.amber{background:var(--warn)}
+#mapbox{position:relative;max-width:560px;aspect-ratio:1/1;overflow:hidden;border-radius:8px;background:#111;margin:6px 0;
+user-select:none;touch-action:none}
+#map-inner{position:absolute;left:0;top:0;width:100%;aspect-ratio:1/1;overflow:hidden;transform-origin:0 0}
+/* the map square only (as on the device page, 19 Nov): the key under it never turns into view */
+#map-img{width:100%;display:block;cursor:crosshair;-webkit-user-drag:none}
+#mapbox.dragging #map-img{cursor:grabbing}
+#pins-box{max-height:280px;overflow-y:auto;border:1px solid var(--line);border-radius:8px;margin-top:6px}
+#pins{width:100%}
+#pins td:not(:first-child){white-space:nowrap}
+#pins td:last-child{text-align:right}
+#map-none{position:absolute;inset:0;padding:30px 10px;text-align:center}
+#legwrap{max-width:560px;line-height:0;overflow:hidden;aspect-ratio:480/80;border-radius:0 0 8px 8px}
+#legend{display:block;width:100%;margin-top:-100%}     /* the key: the picture's last 80 rows */
+#turnbox{position:absolute;right:4px;top:8px;width:36px;display:flex;flex-direction:column;align-items:center;gap:3px;
+background:rgba(40,40,40,.55);border-radius:6px;padding:4px 0;line-height:1;z-index:3}
+#turn{writing-mode:vertical-lr;direction:rtl;height:110px;width:18px;margin:0;cursor:pointer}
+#turn0{font-size:10px;padding:1px 2px;margin:0;line-height:1.2}
+#map-menu{position:absolute;z-index:4;width:230px;background:var(--bg);color:var(--text);border:1px solid var(--line);
+border-radius:8px;padding:8px;box-shadow:0 4px 14px rgba(0,0,0,.35);display:none}
+#map-menu .row{margin:4px 0;gap:4px}
+#map-menu input,#map-menu select{width:100%;box-sizing:border-box}
+/* 23 Nov (Adel): "are you sure" in the page, not the browser's box at the top. Under the header
+   (z-index 5), so STOP and Hard stop stay clickable while it is open. */
+#ask-back{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:4}
+#ask-box{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:16px;
+width:min(440px,calc(100vw - 32px));box-shadow:0 8px 28px rgba(0,0,0,.4)}
+#ask-text{margin-bottom:10px;line-height:1.4}
+#ask-input{width:100%;box-sizing:border-box;margin-bottom:10px}
+#ask-box .row{justify-content:flex-end;gap:8px}
+#toasts{position:fixed;right:14px;bottom:14px;width:min(420px,calc(100vw - 28px));display:flex;flex-direction:column;
+gap:6px;z-index:9;max-height:70vh;overflow-y:auto}
+#toasts .toast{position:relative;background:var(--text);color:var(--bg);padding:8px 30px 8px 12px;border-radius:8px;
+box-shadow:0 2px 8px rgba(0,0,0,.25)}
+#toasts .ago{display:block;opacity:.65;font-size:11px;margin-top:2px}
+#toasts button.x{position:absolute;top:3px;right:4px;background:none;border:0;color:inherit;padding:2px 6px;
+font-size:16px;line-height:1;cursor:pointer;opacity:.7}
+#toasts button.x:hover{opacity:1}
+#toasts button.all{align-self:flex-end;font-size:11px;padding:2px 8px}
+.problem{display:flex;gap:8px;align-items:center;padding:6px 8px;border-radius:8px;background:var(--badbg);
+color:var(--bad);margin:4px 0}
+.known td:first-child{width:60%}
+</style>
+</head>
+<body>
+<header>
+  <h1>APNVI console</h1>
+  <span class="pill" id="p-pc">PC servers</span>
+  <span class="pill" id="p-jetson">Jetson</span>
+  <span class="pill" id="p-link">Link</span>
+  <span class="pill" id="p-device">Device</span>
+  <span class="pill" id="p-place">Place</span>
+  <span class="pill" id="p-grip">Grip</span>
+  <span class="pill" id="p-fake" style="display:none">FAKE device</span>
+  <span class="grow"></span>
+  <button class="danger" id="hardstop" title="Stops the drive link: the master stops the wheels by itself. Restart needed after.">Hard stop</button>
+  <button id="stop" title="Cancel the trip and send zero speed (space bar)">STOP</button>
+</header>
+
+<main>
+  <!-- 23 Nov (Adel): the link for the laptop; the Jetson's address on AUS wireless changes -->
+  <section class="card" id="laptop-card">
+    <h2>Device page for the laptop: <a id="laptop-link" href="#" target="_blank">finding the Jetson ...</a></h2>
+    <div class="note">It changes when the Jetson reboots or moves Wi-Fi access point: open the one shown here.</div>
+  </section>
+  <!-- Get ready -->
+  <section class="card">
+    <h2>Get ready <span class="grow"></span><button class="main" id="ready-go">Get ready</button></h2>
+    <div class="row">
+      <label>Top speed <select id="ready-speed"><option>0.2</option><option>0.3</option><option>0.4</option><option>0.5</option></select> m/s</label>
+    </div>
+    <ul class="steps" id="ready-steps"><li class="s-waiting"><span class="ic">·</span><span class="grow">Press Get ready. It starts the PC's servers, waits for the Jetson, starts the device and checks every part.</span></li></ul>
+  </section>
+
+  <!-- Map: what is in use, where the device is, and every map action -->
+  <section class="card">
+    <h2>Map <span class="grow"></span><span id="place-word" class="pill">-</span></h2>
+    <div class="note">In use: <b id="map-name">-</b> · <b id="pin-count">0</b> pins · Position: <span id="position">-</span></div>
+    <div class="note">Trip: <span id="guide">-</span></div>
+    <div class="bar"><div id="fit-bar"></div></div>
+    <div class="row detail"><span>searching</span><span class="grow" style="text-align:center">following places</span><span>placed</span></div>
+    <div class="mono box" id="place-notes" style="max-height:90px">-</div>
+    <div class="row"><button data-act="new_map" title="Start drawing a new map from where the device is">New map</button>
+      <button data-act="entrance" title="Stand in the doorway facing in, then press">Mark entrance here</button>
+      <button data-act="replace" title="Load the map in use again and place from the entrance">Find my place again</button>
+      <button data-fix="clear" title="Empty both obstacle maps">Clear obstacle maps</button></div>
+    <div class="sub">Saved maps</div>
+    <div class="row"><select id="load-name"></select><button data-act="load_map">Load</button>
+      <button data-act="rename_map">Rename</button><button data-act="delete_map" title="Moves its files to the deleted folder of the maps on the Jetson">Delete</button></div>
+    <div class="row"><input id="save-name" size="16" placeholder="name"><button data-act="save_map">Save the map in use as this name</button>
+      <label class="detail"><input type="checkbox" id="save-force"> may write over a tested map</label></div>
+  </section>
+
+  <!-- Something went wrong -->
+  <section class="card wide">
+    <h2>Something went wrong</h2>
+    <div id="problems"><div class="note">Nothing looks wrong right now.</div></div>
+    <table class="known">
+      <tr><td>The grip dropped out (its blue light is off)</td><td><button data-fix="reset_master">Reset master (stop, reset, start: about 1 min)</button></td></tr>
+      <tr><td>It placed itself in the wrong spot, or won't place</td><td><button data-fix="replace">Find my place again</button> <button data-fix="restart">Restart device</button></td></tr>
+      <tr><td>A trip won't move, or finds no route</td><td><button data-fix="clear">Clear obstacle maps</button></td></tr>
+      <tr><td>It misheard a name, or pinned something wrong</td><td>Click it in <i>Pins on the map</i></td></tr>
+      <tr><td>No sound, or "I can't reach the helper computer"</td><td><button data-fix="pc_servers">Start the PC's servers</button> <button data-fix="page">Open the device page</button></td></tr>
+      <tr><td>A PC server is on (green) but answers nothing: no words heard, no voice, or Qwen stuck</td><td><button data-fix="restart_server:speech">Restart speech to text</button> <button data-fix="restart_server:voice">Restart voice</button> <button data-fix="restart_server:ollama">Restart Ollama</button></td></tr>
+      <tr><td>The console says "no helper" or "no link"</td><td><button data-fix="helper">Start the Jetson's helper</button></td></tr>
+      <tr><td>The device's dot shakes on the map, or a trip stalls ("Something is close. Waiting") with nothing in front</td><td><button data-fix="tracking">Reset position tracking</button></td></tr>
+      <tr><td>Remote help lost the Jetson after it moved room or Wi-Fi access point</td><td><button data-fix="link">Restart the internet link</button></td></tr>
+      <tr><td>Anything else</td><td><button data-fix="log">Show last errors</button> <button data-fix="restart">Restart device</button></td></tr>
+    </table>
+    <div class="mono box" id="log" style="display:none;margin-top:8px;max-height:260px"></div>
+  </section>
+
+  <!-- Watch: the device's own page -->
+  <section class="card">
+    <h2>Watch: camera, map, sound</h2>
+    <div class="row"><button data-fix="page">Open the device page in a new tab</button></div>
+    <div class="note">The camera, the map and the device's voice. Click <b>Sound on</b> in that tab once and keep it open, so the device's voice plays on this PC.</div>
+    <div id="page-missing" class="note" style="display:none">The device page is not reachable yet (device stopped, or no link).</div>
+  </section>
+
+  <!-- Device -->
+  <section class="card">
+    <h2>Device</h2>
+    <div class="row">
+      <button data-dev="start">Start</button><button data-dev="stop">Stop</button>
+      <button data-dev="restart">Restart</button><button data-dev="reset_master">Reset master</button>
+    </div>
+    <div class="note">Start, Restart and Reset master use the choices in Get ready. Settings file: <span class="mono" id="settings">-</span></div>
+    <div class="note">Started with: <span class="mono" id="options">-</span></div>
+    <div class="row"><b id="job-title">No job yet</b></div>
+    <div class="mono box" id="job">-</div>
+  </section>
+
+  <!-- Grip -->
+  <section class="card">
+    <h2>Grip and wheels</h2>
+    <div class="row"><span><span class="light" id="l-red"></span>Red</span><span><span class="light" id="l-green"></span>Green</span>
+      <span><span class="light" id="l-conn"></span>Connected</span><span><span class="light" id="l-master"></span>Master</span></div>
+    <div class="note">Wheels: <span id="wheels">-</span> · Stops: <span id="stops">-</span></div>
+    <div class="note">Obstacle: <span id="hazard">-</span> · Free mode: <span id="free">-</span></div>
+    <div class="note">Buzz now: <b id="buzz">-</b></div>
+    <div class="row">
+      <button data-sig="near">Buzz near</button><button data-sig="stopped">Buzz stopped</button>
+      <button data-sig="left">Buzz left</button><button data-sig="right">Buzz right</button>
+      <button data-sig="motor1">Motor 1</button><button data-sig="motor2">Motor 2</button>
+    </div>
+    <div class="note">Buzzes play for 3 s on the handle. They never move the wheels.</div>
+  </section>
+
+  <!-- Map, position, pins -->
+  <section class="card">
+    <h2>Pins on the map</h2>
+    <div class="note">Click a pin or a spot: rename, change type, remove, add a pin, or guide there.
+      Drag to move, wheel to zoom, the lever to turn.</div>
+    <div id="mapbox"><div id="map-inner"><img id="map-img" alt="the map" style="display:none" draggable="false"></div>
+      <div id="map-none" class="note">The map shows here while the device runs.</div>
+      <div id="turnbox"><input type="range" id="turn" min="-180" max="180" step="1" value="0" title="Drag to turn the map">
+        <button type="button" id="turn0" title="Back to north up">0&deg;</button></div>
+      <div id="map-menu"></div></div>
+    <div id="legwrap" style="display:none"><img id="legend" alt="the key" draggable="false"></div>
+    <div class="row maptools"><button data-view="in">Zoom in</button><button data-view="out">Zoom out</button><button data-view="reset">Whole map</button></div>
+    <div id="pins-box"><table id="pins"></table></div>
+  </section>
+
+  <!-- What it said -->
+  <section class="card">
+    <h2>What the device said</h2>
+    <div class="mono box" id="said" style="max-height:260px">-</div>
+  </section>
+</main>
+<div id="toasts"></div>
+<div id="ask-back"><div id="ask-box" role="dialog" aria-modal="true"><div id="ask-text"></div>
+  <input id="ask-input"><div class="row"><button id="ask-no">Cancel</button><button id="ask-yes">Yes</button></div></div></div>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+let dev = null, pc = null;
+
+// ---- notifications: stacked, newest at the bottom, each with a close button and its age --------
+const TOAST_KEEP_S = 120, TOAST_MAX = 6;
+let toasts = [];   // {text, at, count, el}
+function ago(at){ const s=Math.round((Date.now()-at)/1000);
+  return s<5?'just now':s<60?s+' s ago':Math.floor(s/60)+' min ago'; }
+function toastText(t){ return t.text+(t.count>1?'  (x'+t.count+')':''); }
+function closeToast(t){ toasts=toasts.filter(o=>o!==t); t.el.remove(); drawToastAll(); }
+function drawToastAll(){
+  const box=$('toasts'); let all=box.querySelector('button.all');
+  if(toasts.length>1 && !all){ all=document.createElement('button'); all.className='all'; all.textContent='Close all';
+    all.onclick=()=>{ toasts.forEach(t=>t.el.remove()); toasts=[]; drawToastAll(); }; box.prepend(all); }
+  if(toasts.length<2 && all) all.remove();
+}
+function toast(text){
+  text=String(text); const box=$('toasts');
+  let t=toasts.find(o=>o.text===text);
+  if(t){ t.count++; t.at=Date.now(); toasts=toasts.filter(o=>o!==t); }   // a repeat moves to the bottom
+  else{
+    t={text, at:Date.now(), count:1, el:document.createElement('div')}; t.el.className='toast';
+    t.el.innerHTML='<span class="msg"></span><span class="ago"></span><button class="x" title="Close">&times;</button>';
+    t.el.querySelector('.x').onclick=()=>closeToast(t);
+  }
+  toasts.push(t); box.appendChild(t.el);
+  t.el.querySelector('.msg').textContent=toastText(t); t.el.querySelector('.ago').textContent=ago(t.at);
+  while(toasts.length>TOAST_MAX) closeToast(toasts[0]);
+  drawToastAll();
+}
+setInterval(()=>{ for(const t of toasts.slice()){
+  if(Date.now()-t.at > TOAST_KEEP_S*1000) closeToast(t); else t.el.querySelector('.ago').textContent=ago(t.at); } }, 5000);
+// ---- "are you sure" and "type a name", inside the page -------------------------------------
+// sure(text) -> true or false; ask(text, value) -> the text typed, or null. Enter = yes, Esc = no.
+function dialog(text, value){
+  return new Promise(done=>{
+    const back=$('ask-back'), input=$('ask-input'), typing = value!==undefined;
+    $('ask-text').textContent=text; input.style.display = typing?'':'none'; input.value = typing?value:'';
+    $('ask-yes').textContent = typing?'OK':'Yes'; back.style.display='flex';
+    const end = v=>{ back.style.display='none'; document.removeEventListener('keydown', key, true); done(v); };
+    const key = e=>{
+      if(e.key==='Enter'){ e.preventDefault(); e.stopPropagation(); $('ask-yes').click(); }
+      else if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); end(null); }
+    };
+    $('ask-yes').onclick = ()=>{ $('ask-yes').blur(); end(typing ? input.value : true); };
+    $('ask-no').onclick = ()=>{ $('ask-no').blur(); end(null); };
+    back.onclick = e=>{ if(e.target===back) end(null); };     // a click beside the box = Cancel
+    document.addEventListener('keydown', key, true);
+    if(typing){ input.focus(); input.select(); } else $('ask-yes').focus();
+  });
+}
+const sure = text => dialog(text).then(v=>v===true);
+const ask = (text, value='') => dialog(text, value);
+
+// Rewrite a block only when its content changed, so buttons inside it are not rebuilt every second.
+function setHtml(el, html){ if(el.shownHtml!==html){ el.shownHtml=html; el.innerHTML=html; } }
+async function api(path, body){
+  try{
+    const r = await fetch(path, body===undefined?{cache:'no-store'}:{method:'POST',
+      headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const data = await r.json().catch(()=>({}));
+    // Status polls stay quiet: the top bar and "Something went wrong" already show a dead link.
+    if(!r.ok && data.error && body!==undefined) toast(data.error);
+    return {ok:r.ok, data};
+  }catch(e){return {ok:false, data:{error:String(e)}};}
+}
+function pill(id, cls, text){const p=$(id);p.className='pill '+cls;p.textContent=text;}
+function clock(t){const d=new Date(t*1000);return d.toTimeString().slice(0,8);}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+// ---- polling -------------------------------------------------------------------------------
+async function pollDevice(){
+  const r = await api('/api/dev/status');
+  dev = r.ok ? r.data : null;
+  drawDevice();
+  setTimeout(pollDevice, 1000);
+}
+async function pollPc(){
+  const r = await api('/api/pc/status');
+  pc = r.ok ? r.data : null;
+  drawPc();
+  setTimeout(pollPc, 2500);
+}
+
+function drawPc(){
+  if(!pc) return;
+  const down = pc.servers.filter(s=>!s.up).map(s=>s.name);
+  pill('p-pc', down.length?'bad':'ok', down.length?('PC: '+down.join(', ')+' down'):'PC servers');
+  pill('p-jetson', pc.jetson?'ok':'bad', pc.jetson?'Jetson':'Jetson off');
+  pill('p-link', pc.helper?'ok':'bad', pc.helper?'Link':'No link');
+  $('p-fake').style.display = pc.fake?'':'none';
+  $('page-missing').style.display = pc.page?'none':'';
+  const link = $('laptop-link');
+  if(pc.page_link){ link.textContent = pc.page_link; link.href = pc.page_link; }
+  else { link.textContent = 'not found (Jetson off or unreachable)'; link.removeAttribute('href'); }
+  drawReady(pc.ready);
+}
+
+const ICON = {ok:'✓', warn:'!', fail:'✗', running:'…', waiting:'·'};
+function drawReady(ready){
+  if(!ready) return;
+  $('ready-go').disabled = ready.state==='running';
+  setHtml($('ready-steps'), ready.steps.map(s =>
+    '<li class="s-'+s.state+'"><span class="ic">'+ICON[s.state]+'</span><span class="grow">'+esc(s.name)+
+    (s.detail?'<div class="detail">'+esc(s.detail)+'</div>':'')+'</span>'+
+    (s.fix && (s.state==='fail'||s.state==='warn') ? '<button data-fix="'+esc(s.fix)+'">Fix</button>':'')+'</li>').join(''));
+}
+
+function drawDevice(){
+  if(!dev){ pill('p-device','bad','No device info'); return; }
+  const d = dev.device || {};
+  pill('p-device', dev.running?'ok':'', dev.running?'Device running':'Device stopped');
+  const place = d.placement, name = d.map_name;
+  pill('p-place', place==='placed'?'ok':(place==='searching'?'warn':(place===''&&dev.running?'warn':(place==='lost'?'bad':''))),
+       place==='placed'?'Placed':place==='searching'?'Finding its place':place==='lost'?'Lost':(dev.running&&place===''?'Drawing a new map':'Place -'));
+  const conn = d.grip_connected;
+  pill('p-grip', conn===true?'ok':(conn===false?'bad':''), conn===true?'Grip on':(conn===false?'Grip lost':'Grip -'));
+  // job
+  const job = dev.job;
+  jobNews(job);
+  $('job-title').textContent = job ? (job.name+': '+job.state+(job.step?' ('+job.step+')':'')) : 'No job yet';
+  $('job').textContent = job ? job.lines.slice(-30).join('\n') : '-';
+  $('settings').textContent = (dev.settings||[]).join('  ') || '(none)';
+  $('options').textContent = (dev.options||[]).join(' ');
+  // where am I
+  $('place-word').textContent = place==='placed'?'placed':place==='searching'?'searching':place==='lost'?'lost':(dev.running?(place===''?'new map':'-'):'-');
+  $('place-word').className = 'pill '+(place==='placed'?'ok':place==='lost'?'bad':place==='searching'?'warn':'');
+  const fit = place==='placed' ? Math.max(d.fit||75, 75) : (d.fit||0);
+  $('fit-bar').style.width = Math.min(100, fit)+'%';
+  $('place-notes').textContent = (d.notes||[]).slice(-4).map(n=>clock(n[0])+' '+n[1]).join('\n') || '-';
+  // grip and wheels
+  const drv = d.drive || {};
+  $('l-red').className='light'+(d.grip_red?' red':'');
+  $('l-green').className='light'+(d.grip_green?' amber':'');
+  $('l-conn').className='light'+(conn===true?' on':conn===false?' red':'');
+  $('l-master').className='light'+(drv.master===true?' on':drv.master===false?' red':'');
+  $('wheels').textContent = drv.left_pct!==undefined ? ('left '+drv.left_pct+'%, right '+drv.right_pct+'%') : '-';
+  $('stops').textContent = (d.stops||drv.stops||[]).join(', ') || 'none';
+  const hz = d.hazard||{};
+  $('hazard').textContent = hz.level ? (hz.level+(hz.distance!==undefined?' '+hz.distance+' m':'')+(hz.side?' '+hz.side:'')) : '-';
+  const fr = d.free||{};
+  $('free').textContent = fr.why ? (fr.why+(fr.turn_rps?' turning '+fr.turn_rps:'')) : '-';
+  $('buzz').textContent = d.buzz || '-';
+  // map and pins
+  $('map-name').textContent = name || (dev.running?'(new map, not saved)':'-');
+  const pos = d.position;
+  $('position').textContent = pos ? (pos.x+', '+pos.y+' m, '+pos.heading+'°') : '-';
+  const g = d.guide||{};
+  $('guide').textContent = g.state ? (g.state+(g.goal?' to '+g.goal.name:'')+(g.distance_m!=null?', '+g.distance_m+' m to go':'')+(g.paused_by?' (paused: '+g.paused_by+')':'')) : '-';
+  const pins = d.pins||[];
+  $('pin-count').textContent = pins.length + (d.pins_waiting?(' (+'+d.pins_waiting+' seen once)'):'');
+  const shown = JSON.stringify(pins);
+  if($('pins').dataset.shown !== shown){
+    $('pins').dataset.shown = shown;
+    $('pins').innerHTML = pins.length ? pins.map(p=>'<tr><td>'+esc(p.name)+'</td><td class="detail">'+esc(p.kind||'')+'</td><td class="detail">'+
+      Number(p.x).toFixed(1)+', '+Number(p.y).toFixed(1)+'</td><td><button data-pin="rename" data-name="'+esc(p.name)+'" data-x="'+p.x+'" data-y="'+p.y+'">Rename</button> '+
+      '<button data-pin="remove" data-name="'+esc(p.name)+'" data-x="'+p.x+'" data-y="'+p.y+'">Remove</button></td></tr>').join('') : '<tr><td class="detail">No pins</td></tr>';
+  }
+  // said
+  $('said').textContent = (d.said||[]).slice(-18).reverse().map(s=>clock(s[0])+'  '+s[1]).join('\n') || '-';
+  // problems
+  const probs = (dev.problems||[]).slice();
+  if(pc){ pc.servers.filter(s=>!s.up).forEach(s=>probs.push({problem:s.name+' on the PC is not running',fix:'start_server:'+s.key,why:'Port '+s.port+' closed.'})); }
+  setHtml($('problems'), probs.length ? probs.map(p=>'<div class="problem"><span class="grow"><b>'+esc(p.problem)+'</b><div class="detail">'+esc(p.why||'')+
+    '</div></span><button data-fix="'+esc(p.fix)+'">Fix</button></div>').join('') : '<div class="note">Nothing looks wrong right now.</div>');
+}
+
+async function loadMaps(){
+  const r = await api('/api/dev/maps');
+  if(!r.ok) { setTimeout(loadMaps, 3000); return; }
+  const sel = $('load-name'), keep = sel.value;
+  sel.innerHTML = r.data.maps.map(m=>'<option>'+esc(m)+'</option>').join('');
+  if(keep && r.data.maps.includes(keep)) sel.value = keep;
+  else if(dev && dev.device && r.data.maps.includes(dev.device.map_name)) sel.value = dev.device.map_name;
+}
+
+// ---- the clickable map ---------------------------------------------------------------------
+const KINDS = ['thing','place','sign','room'];
+let pic = null, menuOpen = false;
+async function pollPicture(){
+  const r = await api('/api/dev/map/picture');
+  if(r.ok && r.data.image){
+    pic = r.data;
+    $('map-img').src = $('legend').src = 'data:image/'+r.data.format+';base64,'+r.data.image;
+    $('map-img').style.display=''; $('legwrap').style.display=''; $('map-none').style.display='none';
+  } else {
+    pic = null; if(!menuOpen){ $('map-img').style.display='none'; $('legwrap').style.display='none'; }
+    $('map-none').style.display=''; $('map-none').textContent = (r.data&&r.data.why) || 'The map shows here while the device runs.';
+  }
+  setTimeout(pollPicture, document.hidden ? 4000 : 1000);
+}
+function kindOptions(now){ return KINDS.map(k=>'<option'+(k===now?' selected':'')+'>'+k+'</option>').join(''); }
+function openMenu(html, px, py){
+  const m=$('map-menu'), box=$('mapbox'); m.innerHTML=html; m.style.display='block'; menuOpen=true;
+  m.style.left=Math.max(0, Math.min(px+8, box.clientWidth-m.offsetWidth))+'px';
+  m.style.top=Math.max(0, Math.min(py+8, box.clientHeight-m.offsetHeight))+'px';
+  const first=m.querySelector('input'); if(first){ first.focus(); first.select(); }
+}
+function closeMenu(){ $('map-menu').style.display='none'; menuOpen=false; }
+
+// The view, as on the device page: the lever turns the map round the middle of the box;
+// moving and zooming (view) happen under that turn. Clicks are turned back before use.
+let view = new DOMMatrix(), turnDeg = 0, drag = null, dragged = false;
+const ZOOM_MIN = 0.5, ZOOM_MAX = 12;
+try{ turnDeg = parseFloat(localStorage.getItem('consoleMapTurn')) || 0; }catch(err){}
+function zoomOf(m){ return Math.hypot(m.a, m.b); }
+function boxPoint(e){ const r=$('mapbox').getBoundingClientRect(); return {x:e.clientX-r.left, y:e.clientY-r.top}; }
+function boxCentre(){ const b=$('mapbox'); return {x:b.clientWidth/2, y:b.clientHeight/2}; }
+function turning(){ const c=boxCentre(); return new DOMMatrix().translate(c.x, c.y).rotate(turnDeg).translate(-c.x, -c.y); }
+function whole(){ return turning().multiply(view); }          // picture -> screen
+function place(){ $('map-inner').style.transform = whole().toString(); }
+function setView(m){ const z=zoomOf(m); if(z<ZOOM_MIN||z>ZOOM_MAX) return; view=m; place(); }
+function onScreen(m){ const t=turning(); setView(t.inverse().multiply(m).multiply(t).multiply(view)); }  // m in screen terms
+function zoomAt(p, f){ onScreen(new DOMMatrix().translate(p.x, p.y).scale(f).translate(-p.x, -p.y)); }
+function setTurn(d){
+  turnDeg = Math.max(-180, Math.min(180, d)); $('turn').value = turnDeg;
+  $('turn').title = 'Map turned '+Math.round(turnDeg)+' degrees (drag to turn)';
+  $('turn0').textContent = Math.round(turnDeg)+'\u00b0';
+  try{ localStorage.setItem('consoleMapTurn', turnDeg); }catch(err){}
+  place();
+}
+$('turn').addEventListener('input', ()=>setTurn(parseFloat($('turn').value) || 0));
+$('turn0').addEventListener('click', ()=>setTurn(0));
+window.addEventListener('resize', place);
+setTurn(turnDeg);
+$('mapbox').addEventListener('wheel', e=>{ if(!pic || e.target.closest('#turnbox, #map-menu')) return; e.preventDefault();
+  zoomAt(boxPoint(e), e.deltaY<0 ? 1.2 : 1/1.2); }, {passive:false});
+$('mapbox').addEventListener('contextmenu', e=>e.preventDefault());
+$('mapbox').addEventListener('mousedown', e=>{
+  if(e.target.closest('#map-menu, #turnbox') || !pic) return;
+  drag = {x:e.clientX, y:e.clientY, right:e.button===2}; dragged = false;
+});
+window.addEventListener('mousemove', e=>{
+  if(!drag) return;
+  const dx=e.clientX-drag.x, dy=e.clientY-drag.y;
+  if(!dragged && Math.hypot(dx, dy) < 4) return;       // a left click that wobbles is still a click
+  dragged = true; $('mapbox').classList.add('dragging');
+  onScreen(new DOMMatrix().translate(dx, dy)); drag.x=e.clientX; drag.y=e.clientY;
+});
+window.addEventListener('mouseup', ()=>{ drag=null; $('mapbox').classList.remove('dragging'); });
+document.querySelector('.maptools').addEventListener('click', e=>{
+  const b=e.target.closest('button[data-view]'); if(!b) return; const c=boxCentre(), w=b.dataset.view;
+  if(w==='in') zoomAt(c, 1.4); else if(w==='out') zoomAt(c, 1/1.4);
+  else setView(new DOMMatrix());          // the whole map; the turn stays (0 deg puts north up)
+});
+
+$('map-img').addEventListener('click', e=>{
+  if(!pic || dragged){ dragged=false; return; }
+  const v=pic.view, k=v.size/$('map-inner').offsetWidth, p=boxPoint(e);
+  const q=whole().inverse().transformPoint(new DOMPoint(p.x, p.y));
+  const col=q.x*k, row=q.y*k;
+  if(row > v.size) return;          // the key under the map, not the map
+  let best=null, gap=1e9;
+  for(const d of (v.pins||[])){ const g=Math.hypot(d.col-col, d.row-row); if(g<gap){ gap=g; best=d; } }
+  const px=p.x, py=p.y;
+  if(best && gap <= 14*k/zoomOf(view)){
+    openMenu('<b>'+esc(best.name)+'</b> <span class="detail">('+esc(best.kind)+')</span>'+
+      '<div class="row"><input id="mm-name" value="'+esc(best.name)+'"></div>'+
+      '<div class="row"><select id="mm-kind">'+kindOptions(best.kind)+'</select></div>'+
+      '<div class="row"><button data-mm="save" data-name="'+esc(best.name)+'" data-kind="'+esc(best.kind)+'" data-x="'+best.x+'" data-y="'+best.y+'">Save</button>'+
+      '<button data-mm="remove" data-name="'+esc(best.name)+'" data-x="'+best.x+'" data-y="'+best.y+'">Remove</button>'+
+      '<button data-mm="go" data-name="'+esc(best.name)+'" data-x="'+best.x+'" data-y="'+best.y+'">Guide here</button><button data-mm="close">Cancel</button></div>', px, py);
+  } else {
+    const scale=v.size/v.span, x=+(v.x_left+col/scale).toFixed(2), y=+(v.y_top-row/scale).toFixed(2);
+    openMenu('<b>New pin here</b>'+
+      '<div class="row"><input id="mm-name" placeholder="name, e.g. water bottle"></div>'+
+      '<div class="row"><select id="mm-kind">'+kindOptions('thing')+'</select></div>'+
+      '<div class="row"><button data-mm="add" data-x="'+x+'" data-y="'+y+'">Add</button><button data-mm="go" data-x="'+x+'" data-y="'+y+'">Guide here</button><button data-mm="close">Cancel</button></div>', px, py);
+  }
+});
+$('map-menu').addEventListener('keydown', e=>{
+  if(e.key==='Enter'){ const b=$('map-menu').querySelector('button[data-mm="add"],button[data-mm="save"]'); if(b) b.click(); }
+  if(e.key==='Escape') closeMenu();
+});
+$('map-menu').addEventListener('click', async e=>{
+  const b=e.target.closest('button[data-mm]'); if(!b) return;
+  const what=b.dataset.mm, name=($('mm-name')||{}).value, kind=($('mm-kind')||{}).value;
+  if(what==='close') return closeMenu();
+  const at = {x:+b.dataset.x, y:+b.dataset.y};     // this one pin, not every pin of its name
+  if(what==='go'){
+    // a pin whose name is its own goes by name (the guide then stops beside it); else the point
+    const pin=b.dataset.name, alone = pin && (pic.view.pins||[]).filter(p=>p.name===pin).length===1;
+    const where = alone ? pin : (pin ? 'this '+pin : 'this spot');
+    if(!await sure('Start a trip to '+where+'? The wheels will move. STOP or Space ends it.')) return;
+    closeMenu(); const r=await api('/api/dev/goal', alone?{name:pin}:at); if(r.ok) toast(r.data.reply); return;
+  }
+  if(what==='remove'){ if(!await sure('Remove this "'+b.dataset.name+'" from the map?')) return;
+    closeMenu(); return mapCommand({cmd:'remove_pin',name:b.dataset.name,...at},'Removing '+b.dataset.name); }
+  const to=(name||'').trim(); if(!to){ toast('Type a name first'); return; }
+  closeMenu();
+  if(what==='add') return mapCommand({cmd:'pin',name:to,kind,x:+b.dataset.x,y:+b.dataset.y},'Adding '+to);
+  // save: a new name and/or a new type
+  let now=b.dataset.name;
+  if(to!==now){ await mapCommand({cmd:'rename_pin',name:now,to,...at},'Renaming'); now=to; }
+  if(kind!==b.dataset.kind) await mapCommand({cmd:'set_kind',name:now,kind,x:+b.dataset.x,y:+b.dataset.y},'Changing '+now+' to a '+kind);
+});
+document.addEventListener('keydown', e=>{ if(e.key==='Escape' && menuOpen) closeMenu(); });
+
+// ---- actions -------------------------------------------------------------------------------
+async function mapCommand(body, what){
+  toast(what+' ...');
+  const r = await api('/api/dev/map', body);
+  if(r.ok) toast(r.data.reply || 'sent');
+  loadMaps();
+}
+async function devJob(what){
+  // 22 Nov (Adel): Start, Restart and Reset master all use the Get ready choices shown now.
+  const as = ' at '+$('ready-speed').value+' m/s';
+  const ask = {stop:'Stop the whole device?', restart:'Restart the whole device'+as+' (about 1 minute)?',
+    reset_master:'Stop the device, restart the master ESP32 and start again'+as+' (about 1 minute)?'}[what];
+  if(ask && !await sure(ask)) return;
+  const body = what==='stop' ? {} : {preset:'mapping', speed:$('ready-speed').value};
+  const r = await api('/api/dev/device/'+what, body);
+  // the start and the end of the job are told by jobNews, from the device's own status
+}
+// 23 Nov (Adel): "Restarting device ..." when a job starts, "Device restarted" when it ends.
+const JOB_WORDS = {start:['Starting the device ...','Device started'],
+  stop:['Stopping the device ...','Device stopped'],
+  restart:['Restarting the device ...','Device restarted'],
+  reset_master:['Restarting the master ESP32 and the device ...','Master ESP32 and device restarted']};
+let jobSeen = null;                 // the job's start time and state when last looked at
+function jobNews(job){
+  const key = job ? job.started+':'+job.state : '';
+  if(jobSeen !== null && key !== jobSeen && job){
+    const words = JOB_WORDS[job.name] || [job.name+' ...', job.name+' done'];
+    if(job.state==='running') toast(words[0]);
+    else if(job.state==='done') toast(words[1]);
+    else toast(words[0].replace(' ...','')+' failed'+(job.step?' at "'+job.step+'"':'')+': see the Device panel');
+  }
+  jobSeen = key;
+}
+async function fix(what){
+  if(what.startsWith('start_server:')){ const r=await api('/api/pc/start_server',{key:what.split(':')[1]}); toast(r.data.said||r.data.error); return; }
+  if(what.startsWith('restart_server:')){ const key=what.split(':')[1]; if(!await sure('Stop the PC\'s '+key+' server and start it again? The device can\'t use it for up to a minute.')) return;
+    toast('Restarting '+key+' ...'); const r=await api('/api/pc/restart_server',{key}); toast(r.data.said||r.data.error); return; }
+  if(what==='pc_servers'){ for(const s of (pc?pc.servers:[])) if(!s.up){ const r=await api('/api/pc/start_server',{key:s.key}); toast(r.data.said);} if(pc && pc.servers.every(s=>s.up)) toast('All three PC servers are already running'); return; }
+  if(what==='warm'){ toast('Loading Qwen ...'); const r=await api('/api/pc/warm',{}); toast(r.data.said||r.data.error); return; }
+  if(what==='helper'||what==='jetson'){ if(what==='jetson') toast('Switch the Jetson on, and check it joined the PC hotspot. Trying its helper too.');
+    const r=await api('/api/pc/start_helper',{}); toast(r.data.said||r.data.error); return; }
+  if(what==='tracking'){ toast('Resetting position tracking ...'); const r=await api('/api/pc/reset_tracking',{}); toast(r.data.said||r.data.error); return; }
+  if(what==='link'){ toast('Restarting the internet link ...'); const r=await api('/api/pc/restart_link',{}); toast(r.data.said||r.data.error); return; }
+  if(what==='replace'){ const r=await api('/api/dev/replace',{}); if(r.ok) toast((r.data.reply||'sent')+'. Push it a few metres from the entrance.'); return; }
+  if(what==='clear'){ const r=await api('/api/dev/clear',{}); if(r.ok) toast(r.data.done.join(' | ')); return; }
+  if(what==='page'){ // 23 Nov (Adel): the Jetson's current address, the same link as at the top
+    const url = (pc && pc.page_link) ? pc.page_link : 'http://localhost:8081';
+    window.open(url, 'apnvi_device'); toast('Device page opened at '+url+': click Sound on in it'); return; }
+  if(what==='log'){ const r=await api('/api/dev/log'); const b=$('log'); b.style.display='';
+    b.textContent = r.ok ? ('Warnings and errors:\n'+(r.data.warnings.join('\n')||'(none)')+'\n\nNewest lines:\n'+r.data.tail.join('\n')) : 'No log: '+(r.data.error||'?'); return; }
+  if(['reset_master','restart'].includes(what)) return devJob(what);
+  toast('No fix button for "'+what+'" yet');
+}
+
+document.addEventListener('click', async e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  if(b.dataset.dev) return devJob(b.dataset.dev);
+  if(b.dataset.fix) return fix(b.dataset.fix);
+  if(b.dataset.sig){ const r=await api('/api/dev/signal',{name:b.dataset.sig,secs:3}); if(r.ok) toast('Buzzing "'+b.dataset.sig+'" for 3 s'); return; }
+  const at = {x:+b.dataset.x, y:+b.dataset.y};     // this one pin, not every pin of its name
+  if(b.dataset.pin==='remove'){ if(await sure('Remove this "'+b.dataset.name+'" from the map?')) mapCommand({cmd:'remove_pin',name:b.dataset.name,...at},'Removing'); return; }
+  if(b.dataset.pin==='rename'){ const to=await ask('New name for this "'+b.dataset.name+'":'); if(to) mapCommand({cmd:'rename_pin',name:b.dataset.name,to,...at},'Renaming'); return; }
+  const act = b.dataset.act;
+  if(act==='new_map'){ if(await sure('Start a new map? The map on screen is cleared. Saved maps stay on disk; pins not saved are dropped.')) mapCommand({cmd:'new_map'},'Starting a new map'); }
+  else if(act==='entrance'){ mapCommand({cmd:'set_entrance'},'Marking the entrance'); }
+  else if(act==='save_map'){ const name=$('save-name').value.trim(); if(!name){toast('Type a name first');return;}
+    mapCommand({cmd:'save_map',name,force:$('save-force').checked},'Saving (up to 30 s)'); $('save-force').checked=false; }
+  else if(act==='load_map'){ const name=$('load-name').value; if(!name){toast('No saved map to load');return;}
+    if(await sure('Load '+name+'? The device will then find its place on it.')) mapCommand({cmd:'load_map',name},'Loading '+name); }
+  else if(act==='replace'){ fix('replace'); }
+  else if(act==='delete_map'){ const name=$('load-name').value; if(!name){toast('No saved map to delete');return;}
+    if(!await sure('Delete the map "'+name+'" and its pins? Its files move to the deleted folder of the maps on the Jetson.')) return;
+    const r=await api('/api/dev/map/delete',{name}); if(r.ok){ toast(r.data.reply); loadMaps(); } }
+  else if(act==='rename_map'){ const name=$('load-name').value; if(!name){toast('No saved map to rename');return;}
+    const to=await ask('New name for the map "'+name+'":', name); if(!to||to.trim()===name) return;
+    const r=await api('/api/dev/map/rename_map',{name,to:to.trim()}); if(r.ok){ toast(r.data.reply); loadMaps(); } }
+});
+
+$('ready-go').onclick = async ()=>{
+  const r = await api('/api/pc/ready', {preset:'mapping', speed:$('ready-speed').value});
+  if(r.ok) toast('Getting ready ...');
+};
+async function stopNow(){ const r=await api('/api/dev/stop',{}); toast(r.ok?'STOP: trip cancelled, zero speed sent':'STOP could not reach the device: use green on the grip'); }
+$('stop').onclick = stopNow;
+$('hardstop').onclick = async ()=>{ if(!await sure('Hard stop: stop the drive link? The wheels stop within half a second; the device needs a restart to drive again.')) return;
+  const r=await api('/api/dev/device/hard_stop',{}); toast(r.data.said||r.data.error); };
+// Space = STOP anywhere except while typing. Buttons give up focus after a click, so Space never
+// presses the last clicked button again.
+document.addEventListener('keydown', e=>{ if(e.code==='Space' && !['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName)){ e.preventDefault(); stopNow(); } });
+document.addEventListener('click', e=>{ const b=e.target.closest('button'); if(b) b.blur(); }, true);
+
+pollDevice(); pollPc(); loadMaps(); pollPicture(); setInterval(loadMaps, 15000);
+</script>
+</body>
+</html>

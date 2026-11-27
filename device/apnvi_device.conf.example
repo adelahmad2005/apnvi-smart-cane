@@ -1,0 +1,29 @@
+# The device's own settings. Copy to ~/apnvi_device.conf on the Jetson and fill in.
+# One launch option per line. start.sh reads this file at every start.
+
+# The campus PC (Qwen 11434, speech 8090, voice 8091). Check it with ipconfig on the PC.
+pc:=192.168.137.1
+
+# The natural voice made on the campus PC (espeak = the Jetson's own robot voice).
+voice_engine:=kokoro
+
+# The saved map to load at start (leave out to draw a new map).
+# map:=esb117_final
+
+# The camera is tipped down this many degrees (read with device/floor_check.py).
+camera_tilt:=0.0
+
+# The grip's vibration motors: on two sides? which one is on the left?
+two_sides:=true
+left_motor:=1
+
+# Free mode steering (the redirection). Only after its floor tests pass.
+free_steer:=false
+# free_turn_rps:=0.4
+# free_centre:=true
+
+# How far in front of a thing a trip to it ends, in metres.
+# stand_off_m:=0.8
+
+# Where the "careful" vibration starts, in metres from the device's front.
+# careful_m:=1.0
