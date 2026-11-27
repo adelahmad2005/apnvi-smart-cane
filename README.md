@@ -10,6 +10,8 @@ A user holds a button and says *"take me to the water bottle."* APNVI finds the 
 
 ![From one sentence to "You have arrived"](docs/slides/04-from-one-sentence-to-you-have-arrived.png)
 
+**[Explore the interactive code map →](https://adelahmad2005.github.io/apnvi-smart-cane/code-map.html)**
+
 Built at the American University of Sharjah as a senior design project (2026), and planned for continued development as a non-profit.
 
 ---
@@ -100,7 +102,7 @@ The full write-up is in [`docs/results.md`](docs/results.md). It also covers the
 - [Testing and results](docs/results.md): unit, integration, hardware and floor tests, performance, problems and fixes, limitations
 - [Architecture diagrams](docs/slides/README.md): 41 diagrams, from the whole system down to each stage's internals
 - [Final presentation (PDF)](docs/APNVI-presentation.pdf): the full 45-slide deck, including the technical backup slides
-- [Interactive code map](docs/code-map.html): every node, topic and file, searchable (download and open in a browser)
+- [Interactive code map](https://adelahmad2005.github.io/apnvi-smart-cane/code-map.html): every node, topic and file, searchable, in your browser
 
 ## Running it
 
