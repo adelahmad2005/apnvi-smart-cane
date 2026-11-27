@@ -2,7 +2,7 @@
 
 Two tests that run the real programs of Stages 2 to 4 together on any computer, with no ROS, no
 camera, no LiDAR, no AI and no device. They were written to check the final build before it went on
-the Jetson, and they are the "whole-chain test" in `docs/results.md`.
+the Jetson, and they are the "whole-chain test" in Chapter 6 of `docs/APNVI-technical-report.pdf`.
 
 | File | What it runs | What it shows |
 |---|---|---|
@@ -19,4 +19,4 @@ PYTHONPATH=$P python3 sim/free_mode_test.py
 ```
 
 What these tests can't show: that the camera, the LiDAR, the motors, the grip, the network and the
-real AI behave. That is what the lab tests on the device are for (see `docs/results.md`).
+real AI behave. That is what the lab tests on the device are for (see `docs/APNVI-technical-report.pdf`).

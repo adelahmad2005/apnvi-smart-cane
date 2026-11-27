@@ -5,7 +5,7 @@ No ROS, no camera, no LiDAR and no AI are needed: rosstub/ stands in for ROS (it
 message straight to whoever listens), the camera and depth pictures are made up, and a made-up
 AI "sees" a door, a sign that says ESB117 and, later, a water bottle. It shows that the
 programs hand the right messages to each other. It cannot show that the hardware behaves.
-How to run it: see README.md in this folder. `docs/results.md` lists these 11 steps.
+How to run it: see README.md in this folder. The technical report (docs/) lists these 11 steps.
 """
 import json, time, math, tempfile, threading
 import numpy as np

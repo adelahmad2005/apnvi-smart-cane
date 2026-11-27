@@ -10,7 +10,7 @@ A user holds a button and says *"take me to the water bottle."* APNVI finds the 
 
 ![From one sentence to "You have arrived"](docs/slides/04-from-one-sentence-to-you-have-arrived.png)
 
-**[Explore the interactive code map →](https://adelahmad2005.github.io/apnvi-smart-cane/code-map.html)**
+**[Technical report (PDF)](docs/APNVI-technical-report.pdf)** · **[Presentation (PDF)](docs/APNVI-presentation.pdf)** · **[Architecture diagrams](docs/slides/README.md)** · **[Interactive code map](https://adelahmad2005.github.io/apnvi-smart-cane/code-map.html)**
 
 Built at the American University of Sharjah as a senior design project (2026), and planned for continued development as a non-profit.
 
@@ -94,12 +94,11 @@ A selection from the [41 architecture diagrams](docs/slides/README.md):
 | Self-labelling of the map | 3 of 6 landmarks pinned automatically, 0 pinned in the wrong place |
 | Full demo, blindfolded | Completed in 9 minutes, with nobody at the keyboard |
 
-The full write-up is in [`docs/results.md`](docs/results.md). It also covers the hardest problems met during the build (map drift, relocalization on a saved map, radio dropouts) and how each was solved.
+The full write-up is in the [technical report](docs/APNVI-technical-report.pdf). It also covers the hardest problems met during the build (map drift, relocalization on a saved map, radio dropouts) and how each was solved.
 
 ## Documentation
 
-- [System design](docs/system-design.md): hardware, software entities, interfaces, algorithms, the user interface, and the design decisions made during the build
-- [Testing and results](docs/results.md): unit, integration, hardware and floor tests, performance, problems and fixes, limitations
+- [Technical report (PDF)](docs/APNVI-technical-report.pdf): implementation (hardware, software, interfaces, algorithms, user interface), testing and results, problems and fixes, limitations
 - [Architecture diagrams](docs/slides/README.md): 41 diagrams, from the whole system down to each stage's internals
 - [Final presentation (PDF)](docs/APNVI-presentation.pdf): the full 45-slide deck, including the technical backup slides
 - [Interactive code map](https://adelahmad2005.github.io/apnvi-smart-cane/code-map.html): every node, topic and file, searchable, in your browser
@@ -132,7 +131,7 @@ APNVI is a working proof of concept, tested by the team in the lab. The next ste
 - Running the AI models on the device, so it doesn't need a helper PC
 - Production hardware: a sealed grip connector, a proper power system and an enclosure
 
-Known limitations are listed in [`docs/results.md`](docs/results.md#limitations-and-remaining-work).
+Known limitations are listed at the end of Chapter 6 of the [technical report](docs/APNVI-technical-report.pdf).
 
 ## Team
 
