@@ -1,6 +1,61 @@
 # Architecture diagrams
 
-From the device as a whole down to each stage's internals.
+Every diagram from the APNVI final presentation, from the device as a whole down to each stage's internals. The full deck is also available as a PDF: [APNVI-presentation.pdf](../APNVI-presentation.pdf).
+
+## Contents
+
+- [The device and what it does](#the-device-and-what-it-does)
+  - None of today's aids can take you to room 117
+  - One device, held like a cane
+  - From one sentence to “You have arrived”
+  - It stops before it touches anything
+  - Ask, and it looks for you
+  - It draws the room, and names what is in it
+  - The handle leads the way
+  - The grip only speaks when it matters
+  - Free mode: you push, it steers
+  - We tested it on the floor, not just on paper
+  - What broke, and how we fixed it
+- [The system](#the-system)
+  - The whole system
+  - The whole system: every topic
+  - How the parts talk: ROS 2 in one picture
+  - One trip, start to finish: “Take me to the water bottle”
+- [Stage 1: obstacles](#stage-1-obstacles)
+  - Stage 1: what counts as “in the way”
+  - Stage 1 inside: the programs and how they talk
+  - Stage 1 to a stop: the hazard gate
+- [Stage 2: words and things](#stage-2-words-and-things)
+  - Stage 2 inside: the programs and how they talk
+  - Stage 2: a question or a command?
+  - Stage 2: from a box on a picture to a pin on the map
+  - Stage 2: the map labels itself
+- [Stage 3: the map](#stage-3-the-map)
+  - Stage 3 inside: the programs and how they talk
+  - Stage 3: map drift and the fix
+  - Stage 3: finding itself on a saved map
+  - Stage 3: a map’s life, and a new building
+- [Stage 4: guiding](#stage-4-guiding)
+  - Stage 4 inside: the programs and how they talk
+  - Stage 4: Nav2 under the hood
+  - Stage 4: a trip, its states and its rules
+  - Stage 4: getting unstuck by itself
+  - Stage 4: free mode, steering with no trip
+  - Stage 4: the grip, its signals and buttons
+- [Computers](#computers)
+  - What runs where, and what works without the network
+  - How the device reaches the campus PC
+- [Hardware](#hardware)
+  - Wiring and power
+  - What each sensor sees
+- [Safety](#safety)
+  - Every way the wheels stop
+- [Evidence](#evidence)
+  - All the test results
+  - How fast each part is
+- [Why this way](#why-this-way)
+  - APNVI next to what already exists
+  - Why we built it this way
 
 ## The device and what it does
 
@@ -12,9 +67,9 @@ From the device as a whole down to each stage's internals.
 
 ![One device, held like a cane](03-one-device-held-like-a-cane.png)
 
-### From one sentence to You have arrived
+### From one sentence to “You have arrived”
 
-![From one sentence to You have arrived](04-from-one-sentence-to-you-have-arrived.png)
+![From one sentence to “You have arrived”](04-from-one-sentence-to-you-have-arrived.png)
 
 ### It stops before it touches anything
 
@@ -48,25 +103,29 @@ From the device as a whole down to each stage's internals.
 
 ![What broke, and how we fixed it](12-what-broke-and-how-we-fixed-it.png)
 
-## The whole system
+## The system
 
 ### The whole system
 
 ![The whole system](16-the-whole-system.png)
 
+### The whole system: every topic
+
+![The whole system: every topic](17-the-whole-system-every-topic.png)
+
 ### How the parts talk: ROS 2 in one picture
 
 ![How the parts talk: ROS 2 in one picture](18-how-the-parts-talk-ros-2-in-one-picture.png)
 
-### One trip, start to finish: Take me to the water bottle
+### One trip, start to finish: “Take me to the water bottle”
 
-![One trip, start to finish: Take me to the water bottle](19-one-trip-start-to-finish-take-me-to-the-water-bott.png)
+![One trip, start to finish: “Take me to the water bottle”](19-one-trip-start-to-finish-take-me-to-the-water-bott.png)
 
-## Stage 1: obstacle warning
+## Stage 1: obstacles
 
-### Stage 1: what counts as in the way
+### Stage 1: what counts as “in the way”
 
-![Stage 1: what counts as in the way](20-stage-1-what-counts-as-in-the-way.png)
+![Stage 1: what counts as “in the way”](20-stage-1-what-counts-as-in-the-way.png)
 
 ### Stage 1 inside: the programs and how they talk
 
@@ -76,7 +135,7 @@ From the device as a whole down to each stage's internals.
 
 ![Stage 1 to a stop: the hazard gate](22-stage-1-to-a-stop-the-hazard-gate.png)
 
-## Stage 2: perception and voice
+## Stage 2: words and things
 
 ### Stage 2 inside: the programs and how they talk
 
@@ -94,7 +153,7 @@ From the device as a whole down to each stage's internals.
 
 ![Stage 2: the map labels itself](26-stage-2-the-map-labels-itself.png)
 
-## Stage 3: mapping and localization
+## Stage 3: the map
 
 ### Stage 3 inside: the programs and how they talk
 
@@ -108,11 +167,11 @@ From the device as a whole down to each stage's internals.
 
 ![Stage 3: finding itself on a saved map](29-stage-3-finding-itself-on-a-saved-map.png)
 
-### Stage 3: a map's life, and a new building
+### Stage 3: a map’s life, and a new building
 
-![Stage 3: a map's life, and a new building](30-stage-3-a-map-s-life-and-a-new-building.png)
+![Stage 3: a map’s life, and a new building](30-stage-3-a-map-s-life-and-a-new-building.png)
 
-## Stage 4: guidance
+## Stage 4: guiding
 
 ### Stage 4 inside: the programs and how they talk
 
@@ -138,7 +197,7 @@ From the device as a whole down to each stage's internals.
 
 ![Stage 4: the grip, its signals and buttons](36-stage-4-the-grip-its-signals-and-buttons.png)
 
-## Hardware, network and safety
+## Computers
 
 ### What runs where, and what works without the network
 
@@ -148,6 +207,8 @@ From the device as a whole down to each stage's internals.
 
 ![How the device reaches the campus PC](38-how-the-device-reaches-the-campus-pc.png)
 
+## Hardware
+
 ### Wiring and power
 
 ![Wiring and power](39-wiring-and-power.png)
@@ -156,15 +217,23 @@ From the device as a whole down to each stage's internals.
 
 ![What each sensor sees](40-what-each-sensor-sees.png)
 
+## Safety
+
 ### Every way the wheels stop
 
 ![Every way the wheels stop](41-every-way-the-wheels-stop.png)
 
-## Performance and design choices
+## Evidence
+
+### All the test results
+
+![All the test results](42-all-the-test-results.png)
 
 ### How fast each part is
 
 ![How fast each part is](43-how-fast-each-part-is.png)
+
+## Why this way
 
 ### APNVI next to what already exists
 

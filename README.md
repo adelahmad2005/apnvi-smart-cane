@@ -51,6 +51,25 @@ Around the four packages:
 | [`jetson_setup/`](jetson_setup) | One-shot Jetson setup (ROS 2 Humble, drivers, build) and a patch for a tf2 deadlock that silently ended every Nav2 trip |
 | [`docs/`](docs) | System design, test results, architecture diagrams and an interactive code map |
 
+## Diagrams
+
+A selection from the [41 architecture diagrams](docs/slides/README.md):
+
+<table>
+<tr>
+<td width="50%"><a href="docs/slides/18-how-the-parts-talk-ros-2-in-one-picture.png"><img src="docs/slides/18-how-the-parts-talk-ros-2-in-one-picture.png" alt="How the parts talk: ROS 2"></a><br><sub>How the parts talk: ROS 2 in one picture</sub></td>
+<td width="50%"><a href="docs/slides/41-every-way-the-wheels-stop.png"><img src="docs/slides/41-every-way-the-wheels-stop.png" alt="Every way the wheels stop"></a><br><sub>Every way the wheels stop</sub></td>
+</tr>
+<tr>
+<td><a href="docs/slides/25-stage-2-from-a-box-on-a-picture-to-a-pin-on-the-ma.png"><img src="docs/slides/25-stage-2-from-a-box-on-a-picture-to-a-pin-on-the-ma.png" alt="From a box on a picture to a pin on the map"></a><br><sub>Stage 2: from a box on a picture to a pin on the map</sub></td>
+<td><a href="docs/slides/28-stage-3-map-drift-and-the-fix.png"><img src="docs/slides/28-stage-3-map-drift-and-the-fix.png" alt="Map drift and the fix"></a><br><sub>Stage 3: map drift and the fix</sub></td>
+</tr>
+<tr>
+<td><a href="docs/slides/32-stage-4-nav2-under-the-hood.png"><img src="docs/slides/32-stage-4-nav2-under-the-hood.png" alt="Nav2 under the hood"></a><br><sub>Stage 4: Nav2 under the hood</sub></td>
+<td><a href="docs/slides/35-stage-4-free-mode-steering-with-no-trip.png"><img src="docs/slides/35-stage-4-free-mode-steering-with-no-trip.png" alt="Free mode steering"></a><br><sub>Stage 4: free mode, steering with no trip</sub></td>
+</tr>
+</table>
+
 ## Tech stack
 
 **Compute:** NVIDIA Jetson Orin Nano (on the device), a GPU PC for the AI models, 3 × ESP32
@@ -79,7 +98,8 @@ The full write-up is in [`docs/results.md`](docs/results.md). It also covers the
 
 - [System design](docs/system-design.md): hardware, software entities, interfaces, algorithms, the user interface, and the design decisions made during the build
 - [Testing and results](docs/results.md): unit, integration, hardware and floor tests, performance, problems and fixes, limitations
-- [Architecture diagrams](docs/slides/README.md): 39 diagrams, from the whole system down to each stage's internals
+- [Architecture diagrams](docs/slides/README.md): 41 diagrams, from the whole system down to each stage's internals
+- [Final presentation (PDF)](docs/APNVI-presentation.pdf): the full 45-slide deck, including the technical backup slides
 - [Interactive code map](docs/code-map.html): every node, topic and file, searchable (download and open in a browser)
 
 ## Running it
